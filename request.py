@@ -22,6 +22,11 @@ class Request:
         self._parse_start_line(start_line)
         self._parse_head_lines(head_lines)
         
+        declared_length = int(self.get_header("content-length", 0))
+        actual_length = len(self.body.encode("utf-8"))
+        print(declared_length, actual_length)
+        if declared_length and declared_length != actual_length:
+            raise ValueError(f"Body length ({actual_length}) does not match Content-Length ({declared_length})")
      
     
     def get_header(self, key, default = None):
@@ -71,7 +76,7 @@ class Request:
 
 
 
-data = """POST /users?id=42&flag HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent:curl/7.68.0\r\nContent-Type: application/json\r\nContent-Length: 18\r\n\r\n{"name": "Ali"}"""
+data = """POST /users?id=42&flag HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent:curl/7.68.0\r\nContent-Type: application/json\r\nContent-Length: 15\r\n\r\n{"name": "Ali"}"""
 request = Request(data)
 print(request)
 
