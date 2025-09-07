@@ -37,7 +37,7 @@ class Request:
         >>> request.query_params
         {'id': '42', 'flag': True}
     """
-    
+
     def __init__(self, data):
         """
         Initialize a Request object by parsing the raw HTTP request string.
@@ -64,16 +64,16 @@ class Request:
             ValueError: If the body length does not match the Content-Length header.
         """
 
-        splitted_data = self.data.split("\r\n\r\n",1)
-        request_head = splitted_data[0]
-        request_body = splitted_data[1] if len(splitted_data) > 1 else ""
+        request_sections = self.data.split("\r\n\r\n",1)
+        request_header = request_sections[0]
+        request_body = request_sections[1] if len(request_sections) > 1 else ""
         self.body = request_body
 
-        head_lines = request_head.splitlines()
+        header_lines = request_header.splitlines()
 
-        start_line = head_lines[0]
-        self._parse_start_line(start_line)
-        self._parse_head_lines(head_lines)
+        request_line = header_lines[0]
+        self._parse_request_line(request_line)
+        self._parse_header_lines(header_lines[1:])
         
         declared_length = int(self.get_header("content-length", 0))
         actual_length = len(self.body.encode("utf-8"))
@@ -109,7 +109,7 @@ class Request:
             return json.loads(self.body)
         return None
 
-    def _parse_start_line(self, start_line):
+    def _parse_request_line(self, request_line):
         """
         Parse the request start line into method, path, query params, and HTTP version.
 
@@ -121,43 +121,43 @@ class Request:
                 http_version = "HTTP/1.1"
 
         Args:
-            start_line (str): The HTTP start line.
+            request_line (str): The HTTP start line.
         
         Raises:
             IndexError: If the start line format is invalid.
         """ 
          
-        splitted_start_line = start_line.split()
+        request_line_parts = request_line.split()
         try:
-            self.method = splitted_start_line[0]
-            self.http_version = splitted_start_line[2]
+            self.method = request_line_parts[0]
+            self.http_version = request_line_parts[2]
         except IndexError:
             raise IndexError('Invalid request start line format')
         
-        path_and_params = splitted_start_line[1]
-        splitted_path_and_params = path_and_params.split("?")
-        self.path = splitted_path_and_params[0]
+        path_and_params = request_line_parts[1]
+        path_parts = path_and_params.split("?")
+        self.path = path_parts[0]
 
-        if len(splitted_path_and_params) > 1:
-            params = splitted_path_and_params[1].split("&")
+        if len(path_parts) > 1:
+            params = path_parts[1].split("&")
 
             for param in params:
                 param_key, _, param_value = param.partition('=')
                 self.query_params[param_key] = param_value or True
 
-    def _parse_head_lines(self, head_lines):
+    def _parse_header_lines(self, header_lines):
         """
         Parse raw header lines into a dictionary of headers.
 
         Args:
-            head_lines (list[str]): List of header lines (excluding start line).
+            header_lines (list[str]): List of header lines (excluding start line).
 
         Notes:
             Header keys are stored in lowercase for case-insensitive access.
         """
 
-        if len(head_lines) > 1:
-            for header in head_lines[1:]:
+        if len(header_lines) > 1:
+            for header in header_lines:
                 if not header:
                     continue
                 try:
