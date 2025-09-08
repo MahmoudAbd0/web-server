@@ -175,8 +175,8 @@ class Request:
 
 
 data = """POST /users?id=42&flag HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent:curl/7.68.0\r\nContent-Type: application/json\r\nContent-Length: 15\r\n\r\n{"name": "Ali"}"""
-request = Request(data)
-print(request)
+# request = Request(data)
+# print(request)
 
 
 
