@@ -1,4 +1,4 @@
-from response import Response
+from .response import Response
 
 class Router:
     def __init__(self):

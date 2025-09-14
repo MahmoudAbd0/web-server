@@ -1,6 +1,6 @@
 import socket
-from request import Request
-from response import Response
+from .request import Request
+from .response import Response
 
 class Server:
     """
@@ -23,10 +23,11 @@ class Server:
             when finished. Sends a `500 Internal Server Error` if any exception occurs.
     """
         
-    def __init__(self, host = "127.0.0.1", port = 8080):
+    def __init__(self, host = "127.0.0.1", port = 8080, router = None):
         self.host = host
         self.port = port
         self.socket = None
+        self.router = router
 
 
     def start(self):
@@ -50,8 +51,12 @@ class Server:
             
             request = Request(data)
             print("Incoming request:", request)
+            
+            if self.router:
+                response = self.router.resolve(request)
+            else:
+                response = Response(body="Hello, World!")
 
-            response = Response(body="Hello, World!")
             client_connection.sendall(response.convert_to_bytes())
 
         except Exception as e:
