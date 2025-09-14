@@ -1,7 +1,7 @@
 import socket
 from .request import Request
 from .response import Response
-
+from .static import serve_static
 class Server:
     """
     A simple HTTP server that accepts TCP connections, parses HTTP requests,
@@ -51,8 +51,9 @@ class Server:
             
             request = Request(data)
             print("Incoming request:", request)
-            
-            if self.router:
+            if request.path.startswith("/static/"):
+                response = serve_static(request.path.replace("/static/", ""))
+            elif self.router:
                 response = self.router.resolve(request)
             else:
                 response = Response(body="Hello, World!")
