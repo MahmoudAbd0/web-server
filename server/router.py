@@ -1,6 +1,42 @@
 from .response import Response
 
 class Router:
+    """
+    A simple HTTP router that maps request methods and paths to handler functions.
+
+    The Router allows registering handlers for different HTTP methods (GET, POST, PUT, DELETE)
+    and resolving incoming requests to the appropriate handler. If no matching route
+    is found, a 404 response is returned.
+
+    Attributes:
+        routes (dict): A nested dictionary of registered routes in the format:
+            {
+                "GET": {"/path": handler_function},
+                "POST": {"/path": handler_function},
+                ...
+            }
+
+    Methods:
+        add_route(path, method, handler):
+            Registers a handler for a specific HTTP method and path.
+
+        get(path, handler):
+            Shortcut to register a GET route.
+
+        post(path, handler):
+            Shortcut to register a POST route.
+
+        put(path, handler):
+            Shortcut to register a PUT route.
+
+        delete(path, handler):
+            Shortcut to register a DELETE route.
+
+        resolve(request):
+            Finds and executes the handler for the given request.
+            Returns a `Response` with 404 status if no route matches.
+    """
+
     def __init__(self):
         self.routes = {}
 
