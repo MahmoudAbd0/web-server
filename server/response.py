@@ -54,13 +54,17 @@ class Response:
         """
 
         self.status = status
-        self.headers = headers or {}
+        self.headers = {k.lower(): v for k,v in (headers or {}).items()}
         self.body = body if isinstance(body, (str, bytes)) else str(body)
 
         # Ensure a default content-type if not provided
         if "content-type" not in self.headers:
             self.headers["content-type"] = "text/plain; charset=utf-8"
         
+
+    def _format_header_name(self, name: str) -> str:
+        return "-".join(part.capitalize() for part in name.split("-"))
+
 
     def convert_to_bytes(self):
        """
@@ -82,7 +86,7 @@ class Response:
 
        self.headers["content-length"] = str(body_length)
 
-       headers_in_str = "".join(f"{key}: {value}\r\n" for key, value in self.headers.items())
+       headers_in_str = "".join( f"{self._format_header_name(key)}: {value}\r\n" for key, value in self.headers.items())
 
        return (status_line + headers_in_str + "\r\n").encode("utf-8") + body_in_bytes
 
