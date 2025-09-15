@@ -2,27 +2,34 @@ import socket
 from .request import Request
 from .response import Response
 from .static import serve_static
+import threading
 class Server:
     """
-    A simple HTTP server that accepts TCP connections, parses HTTP requests,
-    and sends back HTTP responses.
+    A simple multithreaded HTTP server that accepts TCP connections,
+    parses HTTP requests, and sends back HTTP responses.
 
     Attributes:
         host (str): The host/IP address the server will bind to. Defaults to "127.0.0.1".
         port (int): The TCP port the server will listen on. Defaults to 8080.
         socket (socket.socket | None): The underlying server socket, initialized in `start()`.
+        router (Router | None): Optional router instance for handling dynamic routes.
 
     Methods:
         start():
-            Creates a socket, binds to (host, port), listens for incoming connections,
-            and handles them sequentially.
+            Creates a socket, binds to (host, port), and listens for incoming
+            connections. Each client connection is handled in a separate
+            thread for concurrent request processing.
         
         handle_client(client_connection):
-            Reads raw request data from a client socket, parses it into a `Request`,
-            builds a `Response`, and sends it back. Closes the client connection
-            when finished. Sends a `500 Internal Server Error` if any exception occurs.
+            Runs in its own thread. Reads raw request data from a client socket,
+            parses it into a `Request`, and determines the appropriate `Response`:
+                - Serves static files if the path starts with "/static/".
+                - Uses the configured `Router` if available.
+                - Falls back to a "Hello, World!" response if no router is set.
+            Sends the response back to the client and closes the connection.
+            Returns a `500 Internal Server Error` if any exception occurs.
     """
-        
+     
     def __init__(self, host = "127.0.0.1", port = 8080, router = None):
         self.host = host
         self.port = port
@@ -40,7 +47,9 @@ class Server:
         while True:
             client_connection, client_address = self.socket.accept()
             print(f"New connection from {client_address}")
-            self.handle_client(client_connection)
+            
+            thread = threading.Thread(target=self.handle_client, args=(client_connection,))
+            thread.start()
 
 
     def handle_client(self, client_connection):
