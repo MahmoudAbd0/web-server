@@ -3,6 +3,7 @@ from .request import Request
 from .response import Response
 from .static import serve_static
 import threading
+import multiprocessing
 class Server:
     """
     A simple multithreaded HTTP server that accepts TCP connections,
@@ -30,11 +31,12 @@ class Server:
             Returns a `500 Internal Server Error` if any exception occurs.
     """
      
-    def __init__(self, host = "127.0.0.1", port = 8080, router = None):
+    def __init__(self, host = "127.0.0.1", port = 8080, router = None, mode = "threading"):
         self.host = host
         self.port = port
         self.socket = None
         self.router = router
+        self.mode = mode
 
 
     def start(self):
@@ -47,10 +49,21 @@ class Server:
         while True:
             client_connection, client_address = self.socket.accept()
             print(f"New connection from {client_address}")
-            
-            thread = threading.Thread(target=self.handle_client, args=(client_connection,))
-            thread.start()
 
+            match self.mode:
+                case "sequential":
+                    self.handle_client(client_connection)
+                
+                case "threading":
+                    thread = threading.Thread(target=self.handle_client, args=(client_connection,))
+                    thread.start()
+
+                case "multiprocessing":
+                    process = multiprocessing.Process(target=self.handle_client, args=(client_connection,))
+                    process.start()
+                
+                case _:
+                    raise ValueError(f"Unknown mode: {self.mode}")
 
     def handle_client(self, client_connection):
         try:
