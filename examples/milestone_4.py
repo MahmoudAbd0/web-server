@@ -12,5 +12,5 @@ def slow_handler(request):
 router.get("/slow", slow_handler)
 
 
-server = Server(host="127.0.0.1", port=8080, router=router)
+server = Server(host="127.0.0.1", port=8080, router=router, mode="multiprocessing")
 server.start()

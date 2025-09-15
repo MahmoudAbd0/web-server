@@ -6,23 +6,29 @@ import threading
 import multiprocessing
 class Server:
     """
-    A simple multithreaded HTTP server that accepts TCP connections,
-    parses HTTP requests, and sends back HTTP responses.
+    A simple HTTP server that accepts TCP connections, parses HTTP requests,
+    and sends back HTTP responses. Supports multiple concurrency modes:
+    sequential, multithreading, and multiprocessing.
 
     Attributes:
         host (str): The host/IP address the server will bind to. Defaults to "127.0.0.1".
         port (int): The TCP port the server will listen on. Defaults to 8080.
         socket (socket.socket | None): The underlying server socket, initialized in `start()`.
         router (Router | None): Optional router instance for handling dynamic routes.
+        mode (str): Concurrency mode for handling requests.
+                   Options are:
+                     - "sequential": Handle requests one at a time.
+                     - "threading": Handle each client in a separate thread.
+                     - "multiprocessing": Handle each client in a separate process.
 
     Methods:
         start():
             Creates a socket, binds to (host, port), and listens for incoming
-            connections. Each client connection is handled in a separate
-            thread for concurrent request processing.
+            connections. Depending on `mode`, each client connection is
+            processed sequentially, in a thread, or in a process.
         
         handle_client(client_connection):
-            Runs in its own thread. Reads raw request data from a client socket,
+            Handles a single client connection. Reads raw request data,
             parses it into a `Request`, and determines the appropriate `Response`:
                 - Serves static files if the path starts with "/static/".
                 - Uses the configured `Router` if available.
@@ -50,7 +56,7 @@ class Server:
             client_connection, client_address = self.socket.accept()
             print(f"New connection from {client_address}")
             client_connection.settimeout(10)
-            
+
             match self.mode:
                 case "sequential":
                     self.handle_client(client_connection)
