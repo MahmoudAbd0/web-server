@@ -1,10 +1,10 @@
 from .sequential_server import SequentialServer
-from .threading_server import ThreadingServer
+from .multithreading_server import MultiThreadingServer
 from .multiprocessing_server import MultiprocessingServer
 
 SERVER_TYPES = {
 "sequential": SequentialServer,
-"threading":ThreadingServer,
+"multithreading":MultiThreadingServer,
 "multiprocessing": MultiprocessingServer
 }
 

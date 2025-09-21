@@ -48,3 +48,9 @@ class BaseServer(ABC):
         self.socket.listen(5)
         print(f"Server running on http://{self.host}:{self.port}")
 
+
+    def _accept_client(self):
+        client_connection, client_address = self.socket.accept()
+        print(f"New connection from {client_address}")
+        client_connection.settimeout(10)
+        return client_connection, client_address

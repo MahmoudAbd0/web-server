@@ -8,7 +8,5 @@ class SequentialServer(BaseServer):
         self._create_socket()
         
         while True:
-            client_connection, client_address = self.socket.accept()
-            print(f"New connection from {client_address}")
-            client_connection.settimeout(10)
+            client_connection, _ = self._accept_client()
             self.handle_client(client_connection)
