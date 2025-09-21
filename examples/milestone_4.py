@@ -1,4 +1,4 @@
-from server import Server, Request, Response, Router
+from server import  Request, Response, Router, ServerFactory
 import time
 
 router  = Router()
@@ -12,5 +12,5 @@ def slow_handler(request):
 router.get("/slow", slow_handler)
 
 
-server = Server(host="127.0.0.1", port=8080, router=router, mode="multiprocessing")
+server = ServerFactory.create_server(server_type="threading", router=router)
 server.start()

@@ -1,7 +1,9 @@
 from .sequential_server import SequentialServer
+from .threading_server import ThreadingServer
 
 SERVER_TYPES = {
-"sequential": SequentialServer
+"sequential": SequentialServer,
+"threading":ThreadingServer
 }
 
 class ServerFactory:
