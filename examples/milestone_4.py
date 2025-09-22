@@ -12,5 +12,5 @@ def slow_handler(request):
 router.get("/slow", slow_handler)
 
 
-server = ServerFactory.create_server(server_type="multithreading", router=router)
+server = ServerFactory.create_server(server_type="async", router=router)
 server.start()

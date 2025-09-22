@@ -1,11 +1,13 @@
 from .sequential_server import SequentialServer
 from .multithreading_server import MultiThreadingServer
 from .multiprocessing_server import MultiprocessingServer
+from .async_server import AsyncServer
 
 SERVER_TYPES = {
 "sequential": SequentialServer,
 "multithreading":MultiThreadingServer,
-"multiprocessing": MultiprocessingServer
+"multiprocessing": MultiprocessingServer,
+"async": AsyncServer
 }
 
 class ServerFactory:
