@@ -7,6 +7,7 @@ class TokenBucket:
         self.refill_rate = float(refill_rate)
         self.tokens = float(capacity)
         self.last_refill = time.monotonic()
+        self.last_seen = time.monotonic()
         self._lock = threading.Lock()
     
 
@@ -22,6 +23,8 @@ class TokenBucket:
     def allow_request(self, tokens = 1.0):
         with self._lock:
             self._refill()
+            self.last_seen = time.monotonic()
+            
             if self.tokens >= tokens:
                 self.tokens -= tokens
                 return True, 0.0

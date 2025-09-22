@@ -1,11 +1,12 @@
 import threading
 import queue
+import time
 from .base_server import BaseServer
 from .response import Response
 from .token_bucket import TokenBucket
 
 class ThreadPoolServer(BaseServer):
-    def __init__(self, host="127.0.0.1", port=8080, router=None, max_workers=5, max_queue_size=20, rate_limit_capacity=10, rate_limit_refill=1):
+    def __init__(self, host="127.0.0.1", port=8080, router=None, max_workers=5, max_queue_size=20, rate_limit_capacity=10, rate_limit_refill=1, bucket_ttl = 300):
         super().__init__(host, port, router)
         self.max_workers = max_workers
         self.request_queue = queue.Queue(maxsize=max_queue_size)
@@ -13,7 +14,11 @@ class ThreadPoolServer(BaseServer):
         self.client_buckets = {}
         self.bucket_capacity = rate_limit_capacity
         self.bucket_refill = rate_limit_refill
+        self.bucket_ttl = bucket_ttl
         self._bucket_lock = threading.Lock()
+        
+        cleaner = threading.Thread(target=self._cleanup_buckets, daemon=True)
+        cleaner.start()
     
 
     def start(self):
@@ -66,3 +71,18 @@ class ThreadPoolServer(BaseServer):
                 client_connection.close()
                 
             self.request_queue.task_done()
+
+
+    def _cleanup_buckets(self):
+        while True:
+            time.sleep(self.bucket_ttl/2)
+            time_now = time.monotonic()
+            
+            with self._bucket_lock:
+                buckets_to_delete =  [
+                ip for ip, bucket in self.client_buckets.items() if time_now - bucket.last_seen > self.bucket_ttl
+                ]
+                
+                for ip in buckets_to_delete:
+                    print(f"Cleaning up idle bucket for {ip}")
+                    del self.client_buckets[ip]
