@@ -6,7 +6,10 @@ from .response import Response
 from .token_bucket import TokenBucket
 
 class ThreadPoolServer(BaseServer):
-    def __init__(self, host="127.0.0.1", port=8080, router=None, max_workers=5, max_queue_size=20, rate_limit_capacity=10, rate_limit_refill=1, bucket_ttl = 300):
+    def __init__(self, host="127.0.0.1", port=8080, router=None, max_workers=5, max_queue_size=20,
+                 rate_limit_capacity=10, rate_limit_refill=1, bucket_ttl=300,
+                 global_limit_capacity=100, global_limit_refill=20
+                 ):
         super().__init__(host, port, router)
         self.max_workers = max_workers
         self.request_queue = queue.Queue(maxsize=max_queue_size)
@@ -15,11 +18,12 @@ class ThreadPoolServer(BaseServer):
         self.bucket_capacity = rate_limit_capacity
         self.bucket_refill = rate_limit_refill
         self.bucket_ttl = bucket_ttl
+        self.global_bucket = TokenBucket(global_limit_capacity, global_limit_refill)
         self._bucket_lock = threading.Lock()
-        
+
         cleaner = threading.Thread(target=self._cleanup_buckets, daemon=True)
         cleaner.start()
-    
+
 
     def start(self):
         self._create_socket()
@@ -57,6 +61,20 @@ class ThreadPoolServer(BaseServer):
             client_ip = client_address[0]
             bucket = self._get_client_bucket(client_ip)
             
+            global_request_allowed, global_retry_after = self.global_bucket.allow_request()
+            if not global_request_allowed:
+                print(f"GLOBAL rate limit exceeded. Retry after {global_retry_after:.2f}s")
+                response = Response(
+                    status = 503,
+                    body="Service Unavailable (Global Rate Limit)",
+                    headers={"Retry-After": str(int(global_retry_after))}
+                )
+
+                client_connection.sendall(response.convert_to_bytes())
+                client_connection.close()
+                self.request_queue.task_done()
+                continue
+
             request_allowed, retry_after = bucket.allow_request()
             if request_allowed:
                 self.handle_client(client_connection)
