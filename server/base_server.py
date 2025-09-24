@@ -3,6 +3,8 @@ from .request import Request
 from .static import serve_static
 from .response import Response
 import socket
+from .session_store import SessionStore
+from .session_middleware import SessionMiddleware
 
 class BaseServer(ABC):
     def __init__(self, host = "127.0.0.1", port = 8080, router = None):
@@ -10,6 +12,10 @@ class BaseServer(ABC):
         self.port = port
         self.router = router
         self.socket = None
+        self.session_store = SessionStore()
+        self.session_store.start_cleaner()
+        self.session_middleware = SessionMiddleware(self.session_store)
+        self.middlewares = [SessionMiddleware(self.session_store)]
 
     @abstractmethod
     def start(self):
@@ -22,6 +28,7 @@ class BaseServer(ABC):
                 return
             
             request = Request(data)
+
             print("Incoming request:", request)
             if request.path.startswith("/static/"):
                 response = serve_static(request.path.replace("/static/", ""))
@@ -29,6 +36,9 @@ class BaseServer(ABC):
                 response = self.router.resolve(request)
             else:
                 response = Response(body="Hello, World!")
+
+            for middleware in self.middlewares:
+                middleware.process(request, response)
 
             client_connection.sendall(response.convert_to_bytes())
 

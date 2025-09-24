@@ -8,9 +8,6 @@ class SessionStore():
         self.ttl = ttl
         self.lock = threading.Lock()
 
-        cleaner = threading.Thread(target= self._cleanup_sessions, daemon= True)
-        cleaner.start()
-
 
     def create_session(self):
         session_id = str(uuid.uuid4())
@@ -36,6 +33,16 @@ class SessionStore():
             if session_id in self.sessions:
                 self.sessions[session_id]["data"][key] = value
                 self.sessions[session_id]["last_seen"] = time.monotonic()
+
+   
+    def delete_session(self, session_id):
+        with self.lock:
+            self.sessions.pop(session_id, None)
+
+
+    def start_cleaner(self):
+        cleaner = threading.Thread(target=self._cleanup_sessions, daemon=True)
+        cleaner.start()
 
 
     def _cleanup_sessions(self):

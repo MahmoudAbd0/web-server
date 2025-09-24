@@ -39,6 +39,9 @@ class AsyncServer(BaseServer):
             else:
                     response = Response(body="Hello from AsyncServer!")
 
+            for middleware in self.middlewares:
+                 middleware.process(request, response)
+                 
             writer.write(response.convert_to_bytes())
             await writer.drain()
 
