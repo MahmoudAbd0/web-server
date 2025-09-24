@@ -53,6 +53,7 @@ class Request:
         self.http_version = None
         self.headers = {}
         self.body = ""
+        self.cookies = {}
 
         self.parse_request()
 
@@ -74,12 +75,16 @@ class Request:
         request_line = header_lines[0]
         self._parse_request_line(request_line)
         self._parse_header_lines(header_lines[1:])
+
+        if "cookie" in self.headers:
+            self.cookies = self.parse_cookies(self.headers["cookie"])
         
         declared_length = int(self.get_header("content-length", 0))
         actual_length = len(self.body.encode("utf-8"))
         if declared_length and declared_length != actual_length:
             raise ValueError(f"Body length ({actual_length}) does not match Content-Length ({declared_length})")
      
+
     
     def get_header(self, key, default = None):
         """
@@ -166,17 +171,27 @@ class Request:
                 except ValueError:
                     pass
 
+    
+    def parse_cookies(self, cookie_header):
+        cookies = {}
+        cookies_pairs = cookie_header.split(";")
+        for pair in cookies_pairs:
+            if "=" in pair:
+                key, value = pair.split("=",1)
+                cookies[key.strip()] = value.strip()
+        return cookies                
+
 
     def __repr__(self):
         """Return a human-readable string representation of the Request object."""
 
-        return f"<Request \n METHOD: {self.method} \n PATH: {self.path} \n HTTP_VERSION: {self.http_version} \n QUERY PARAMS: {self.query_params} \n HEADERS: {self.headers} \n BODY: {self.body}>"
+        return f"<Request \n METHOD: {self.method} \n PATH: {self.path} \n HTTP_VERSION: {self.http_version} \n QUERY PARAMS: {self.query_params} \n HEADERS: {self.headers} \n BODY: {self.body}> \n COOKIES: {self.cookies}"
 
 
 
-data = """POST /users?id=42&flag HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent:curl/7.68.0\r\nContent-Type: application/json\r\nContent-Length: 15\r\n\r\n{"name": "Ali"}"""
-# request = Request(data)
-# print(request)
+data = """POST /users?id=42&flag HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent:curl/7.68.0\r\nCookie: session_id=abc123;theme=dark\r\nContent-Type: application/json\r\nContent-Length: 15\r\n\r\n{"name": "Ali"}"""
+request = Request(data)
+print(request.cookies)
 
 
 
