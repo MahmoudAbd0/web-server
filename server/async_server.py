@@ -14,7 +14,7 @@ class AsyncServer(BaseServer):
         print(f"Async server running on http://{address[0]}:{address[1]}")
 
         async with server:
-            server.serve_forever()
+            await server.serve_forever()
 
     def start(self):
         try:
@@ -25,12 +25,17 @@ class AsyncServer(BaseServer):
     async def handle_client(self, reader, writer):
         try:
              
-            data = (await reader.read(1024).decode("utf-8"))
+            data = await reader.read(1024)
+            data = data.decode("utf-8")
             if not data:
                 return
             
             request = Request(data)
             print("Incoming request:", request)
+
+            for middleware in self.middlewares:
+                if hasattr(middleware, "process_request"):
+                    middleware.process_request(request)
 
             if request.path.startswith("/static/"):
                 response = serve_static(request.path.replace("/static/", ""))
@@ -38,10 +43,11 @@ class AsyncServer(BaseServer):
                     response = self.router.resolve(request)
             else:
                     response = Response(body="Hello from AsyncServer!")
-
+                    
             for middleware in self.middlewares:
-                 middleware.process(request, response)
-                 
+                if hasattr(middleware, "process_response"):
+                    middleware.process_response(request, response)
+                            
             writer.write(response.convert_to_bytes())
             await writer.drain()
 

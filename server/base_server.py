@@ -30,6 +30,11 @@ class BaseServer(ABC):
             request = Request(data)
 
             print("Incoming request:", request)
+
+            for middleware in self.middlewares:
+                if hasattr(middleware, "process_request"):
+                    middleware.process_request(request)
+
             if request.path.startswith("/static/"):
                 response = serve_static(request.path.replace("/static/", ""))
             elif self.router:
@@ -38,8 +43,9 @@ class BaseServer(ABC):
                 response = Response(body="Hello, World!")
 
             for middleware in self.middlewares:
-                middleware.process(request, response)
-
+                if hasattr(middleware, "process_response"):
+                    middleware.process_response(request, response)
+                    
             client_connection.sendall(response.convert_to_bytes())
 
         except Exception as e:

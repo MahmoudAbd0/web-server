@@ -108,10 +108,10 @@ class Response:
         ):
         cookie_parts = [f"{name}={value}"]
 
-        if same_site:
+        if same_site is not None:
             same_site = same_site.capitalize()
-        if same_site not in ("Strict", "Lax", "None"):
-            raise ValueError("Invalid SameSite value: must be Strict, Lax, or None")
+            if same_site not in ("Strict", "Lax", "None"):
+                raise ValueError("Invalid SameSite value: must be Strict, Lax, or None")
 
         attributes = {
         "Path": (path, False),
